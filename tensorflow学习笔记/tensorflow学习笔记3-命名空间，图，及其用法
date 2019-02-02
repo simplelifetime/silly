@@ -1,0 +1,44 @@
+1、tf.name_scope
+with tf.name_scope('hidden1') as scope:
+每一层都创建于一个唯一的tf.name_scope之下，创建于该作用域之下的所有元素都将带有其前缀。
+主要与tf.Variable()一起使用，方便变量的命名处理。
+2、tf.name_scope 与 tf.variable_scope 区别 https://www.imooc.com/article/22966
+3、
+summary_op = tf.merge_all_summaries()
+summary_op用于储存所有的即时数据
+
+summary_writer = tf.train.SummaryWriter(FLAGS.train_dir,
+                                        graph_def=sess.graph_def)
+在创建好会话（session）之后，可以实例化一个tf.train.SummaryWriter，用于写入包含了图表本身和即时数据具体值的事件文件。
+最后，每次运行summary_op时，都会往事件文件中写入最新的即时数据，函数的输出会传入事件文件读写器（writer）的add_summary()函数。。
+summary_str = sess.run(summary_op, feed_dict=feed_dict)
+summary_writer.add_summary(summary_str, step)
+事件文件写入完毕之后，可以就训练文件夹打开一个TensorBoard，查看即时数据的情况。
+
+tf.get_variable(    
+name,    
+shape=None,    
+dtype=None,    
+initializer=None,    
+regularizer=None,    
+trainable=True,    
+collections=None,    
+caching_device=None,    
+partitioner=None,    
+validate_shape=True,    
+use_resource=None,    
+custom_getter=None,    
+constraint=None)
+Args:
+name：新变量或现有变量的名称。
+shape：新变量或现有变量的形状。
+dtype：新变量或现有变量的类型（默认为DT_FLOAT）。
+ininializer：如果创建了则用它来初始化变量。
+regularizer：A（Tensor - > Tensor或None）函数;将它应用于新创建的变量的结果将添加到集合tf.GraphKeys.REGULARIZATION_LOSSES中，并可用于正则化。
+trainable：如果为True，还将变量添加到图形集合GraphKeys.TRAINABLE_VARIABLES（参见tf.Variable）。
+collections：要将变量添加到的图表集合列表。默认为[GraphKeys.GLOBAL_VARIABLES]（参见tf.Variable）。
+caching_device：可选的设备字符串或函数，描述变量应被缓存以供读取的位置。默认为Variable的设备。如果不是None，则在另一台设备上缓存。典型用法是在使用变量驻留的Ops的设备上进行缓存，以通过Switch和其他条件语句进行重复数据删除。
+partitioner：可选callable，接受完全定义的TensorShape和要创建的Variable的dtype，并返回每个轴的分区列表（当前只能对一个轴进行分区）。
+validate_shape：如果为False，则允许使用未知形状的值初始化变量。如果为True，则默认为initial_value的形状必须已知。
+use_resource：如果为False，则创建常规变量。如果为true，则使用定义良好的语义创建实验性ResourceVariable。默认为False（稍后将更改为True）。在Eager模式下，此参数始终强制为True。
+custom_getter：Callable，它将第一个参数作为true getter，并允许覆盖内部get_variable方法。 custom_getter的签名应与此方法的签名相匹配，但最适合未来的版本将允许更改：def custom_getter（getter，* args，** kwargs）。也允许直接访问所有get_variable参数：def custom_getter（getter，name，* args，** kwargs）。一个简单的身份自定义getter只需创建具有修改名称的变量是：python def custom_getter（getter，name，* args，** kwargs）：return getter（name +'_suffix'，* args，** kwargs）

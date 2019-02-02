@@ -1,0 +1,54 @@
+sess=tf.session()  开启一个会话，执行run的操作
+tf.add（）执行加法操作
+tf.sub()  执行减法操作
+tf.constant()  获得一个恒量
+tf.variable（） 获得一个变量
+tf.matmul（）将矩阵a乘以矩阵b，生成a * b
+tf.multiply（）两个矩阵中对应元素各自相乘
+tf.assign()  对变量进行赋值
+sess.close()  结束进程，关闭对话
+
+tensorflow执行操作为一个图，变量常量和操作都被视作一个节点（op），op获得tensor以进行运算
+
+minst训练集
+1.minst模型分为训练数据集和测试数据集。每张图片包含28x28像素。可以用一个（60000,784）的张量来表示每一个像素点
+2.tf.one_hot()函数是将input转化为one-hot类型数据输出，相当于将多个数值联合放在一起作为多个相同类型的向量，可用于表示各自的概率分布。
+onehot=true表示，只有一个元素的值是1，其他元素的值是0， 一个长度为n的数组，只有一个元素是1.0，其他元素是0.0。
+
+本地导入mnist数据集代码
+MNIST_data_folder="D:\\TestTensorflow\\……\\MNIST_data"   //mnist数据集具体位置
+mnist=input_data.read_data_sets(MNIST_data_folder,one_hot=True)
+
+利用softmax以及矩阵运算可以得到y
+y = tf.nn.softmax(tf.matmul(x,W) + b)
+
+利用cross_entropy(交叉熵）来估计损失，以求得最小化误差来得到最优模型
+cross_entropy = -tf.reduce_sum(y_*tf.log(y))
+
+tf.truncated_normal(shape, mean, stddev) :shape表示生成张量的维度，mean是均值，stddev是标准差
+在多层神经网络中，该函数用来初始化权重（防止神经元输出为0）
+
+keep_prob：每个神经元保留的概率，为1则保留所有神经元，在drop_out中防止模型过拟合
+
+卷积函数
+tf.nn.conv2d(input, filter, strides, padding, use_cudnn_on_gpu=None, name=None)
+介绍参数：
+input：指卷积需要输入的参数，具有这样的shape[batch, in_height, in_width, in_channels]，分别是[batch张图片, 每张图片高度为in_height, 每张图片宽度为in_width, 图像通道为in_channels]。
+
+filter：指用来做卷积的滤波器，当然滤波器也需要有相应参数，滤波器的shape为[filter_height, filter_width, in_channels, out_channels]，分别对应[滤波器高度, 滤波器宽度, 接受图像的通道数, 卷积后通道数]，其中第三个参数 in_channels需要与input中的第四个参数 in_channels一致，
+
+out_channels第一看的话有些不好理解，如rgb输入三通道图，我们的滤波器的out_channels设为1的话，就是三通道对应值相加，最后输出一个卷积核。
+strides:代表步长，其值可以直接默认一个数，也可以是一个四维数如[1,2,1,1]，则其意思是水平方向卷积步长为第二个参数2，垂直方向步长为1.
+padding：代表填充方式，参数只有两种，SAME和VALID，SAME比VALID的填充方式多了一列，比如一个3*3图像用2*2的滤波器进行卷积，当步长设为2的时候，会缺少一列，则进行第二次卷积的时候，VALID发现余下的窗口不足2*2会直接把第三列去掉，SAME则会填充一列，填充值为0。
+use_cudnn_on_gpu：bool类型，是否使用cudnn加速，默认为true。大概意思是是否使用gpu加速，还没搞太懂。
+name：给返回的tensor命名。给输出feature map起名字。
+
+strides 步长
+conv1 = tf.nn.conv2d(input_tensor,conv1_weights,strides=[1,1,1,1],padding='SAME')
+
+这是一个常见的卷积操作，其中strides=【1,1,1,1】表示滑动步长为1，padding=‘SAME’表示填0操作
+在卷积核移动逐渐扫描整体图时候，因为步长的设置问题，可能导致剩下未扫描的空间不足以提供给卷积核的，大小扫描 比如有图大小为5*5,卷积核为2*2,步长为2,卷积核扫描了两次后，剩下一个元素，不够卷积核扫描了，这个时候就在后面补零，补完后满足卷积核的扫描，这种方式就是same。如果说把刚才不足以扫描的元素位置抛弃掉，就是valid方式。
+
+求最后模型的accuracy
+correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))

@@ -1,0 +1,87 @@
+image.open() 打开图像
+image.show() 输出图像
+image.save() 保存图像 并可以转换格式
+image.resize() 改变图片尺寸
+具体见https://www.cnblogs.com/chimeiwangliang/p/7130434.html
+一、PIL的基本概念：
+PIL中所涉及的基本概念有如下几个：通道（bands）、模式（mode）、尺寸（size）、坐标系统（coordinate system）、调色板（palette）、信息（info）和滤波器（filters）。
+1、  通道
+每张图片都是由一个或者多个数据通道构成。PIL允许在单张图片中合成相同维数和深度的多个通道。
+以RGB图像为例，每张图片都是由三个数据通道构成，分别为R、G和B通道。而对于灰度图像，则只有一个通道。
+对于一张图片的通道数量和名称，可以通过方法getbands()来获取。方法getbands()是Image模块的方法，它会返回一个字符串元组（tuple）。该元组将包括每一个通道的名称。
+Python的元组与列表类似，不同之处在于元组的元素不能修改,元组使用小括号，列表使用方括号，元组创建很简单，只需要在括号中添加元素，并使用逗号隔开即可。
+方法getbands()的使用如下：
+from PIL import Image
+im = Image.open("xiao.png")
+print(im.getbands())
+输出：
+('R', 'G', 'B')
+2、  模式
+图像的模式定义了图像的类型和像素的位宽。当前支持如下模式：
+
+1：1位像素，表示黑和白，但是存储的时候每个像素存储为8bit。
+L：8位像素，表示黑和白。
+P：8位像素，使用调色板映射到其他模式。
+RGB：3x8位像素，为真彩色。
+RGBA：4x8位像素，有透明通道的真彩色。
+CMYK：4x8位像素，颜色分离。
+YCbCr：3x8位像素，彩色视频格式。
+I：32位整型像素。
+F：32位浮点型像素。
+PIL也支持一些特殊的模式，包括RGBX（有padding的真彩色）和RGBa（有自左乘alpha的真彩色）。
+
+可以通过mode属性读取图像的模式。其返回值是包括上述模式的字符串。
+属性mode的使用如下：
+from PIL import Image
+im = Image.open("xiao.png")
+print(im.mode)
+输出：
+'RGB'
+3、  尺寸
+通过size属性可以获取图片的尺寸。这是一个二元组，包含水平和垂直方向上的像素数。
+属性mode的使用如下：
+from PIL import Image
+im = Image.open("xiao.png")
+print(im.size)
+输出:
+(670, 502)
+
+6、  信息
+使用info属性可以为一张图片添加一些辅助信息。这个是字典对象。加载和保存图像文件时，多少信息需要处理取决于文件格式。
+属性info的使用如下：
+from PIL import Image
+im = Image.open("xiao.png")
+print(im.info)
+输出：
+{}
+7、  滤波器
+对于将多个输入像素映射为一个输出像素的几何操作，PIL提供了4个不同的采样滤波器：
+NEAREST：最近滤波。从输入图像中选取最近的像素作为输出像素。它忽略了所有其他的像素。
+BILINEAR：双线性滤波。在输入图像的2x2矩阵上进行线性插值。注意：PIL的当前版本，做下采样时该滤波器使用了固定输入模板。
+BICUBIC：双立方滤波。在输入图像的4x4矩阵上进行立方插值。注意：PIL的当前版本，做下采样时该滤波器使用了固定输入模板。
+ANTIALIAS：平滑滤波。这是PIL 1.1.3版本中新的滤波器。对所有可以影响输出像素的输入像素进行高质量的重采样滤波，以计算输出像素值。在当前的PIL版本中，这个滤波器只用于改变尺寸和缩略图方法。
+注意：在当前的PIL版本中，ANTIALIAS滤波器是下采样（例如，将一个大的图像转换为小图）时唯一正确的滤波器。BILIEAR和BICUBIC滤波器使用固定的输入模板，用于固定比例的几何变换和上采样是最好的。
+Image模块中的方法resize()和thumbnail()用到了滤波器。
+方法resize()的使用如下：
+
+方法resize()的定义为：resize(size, filter=None)=> image
+
+对参数filter不赋值的话，方法resize()默认使用NEAREST滤波器。如果要使用其他滤波器可以通过下面的方法来实现：
+from PIL import Image
+im = Image.open("xiao.png")
+print(im.size)
+im_resize0 = im.resize((256,256), Image.BILINEAR)
+print(im_resize0.size)
+im_resize1 = im.resize((256,256), Image.BICUBIC)
+print(im_resize1.size)
+im_resize2 = im.resize((256,256), Image.ANTIALIAS)
+print(im_resize2.size)
+输出：
+(670, 502)
+(256,256)
+(256,256)
+(256,256)
+
+
+
+

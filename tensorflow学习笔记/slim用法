@@ -1,0 +1,11 @@
+https://www.jianshu.com/p/14de66aa1546
+轻量级的tensorflows
+可以很方便的建立某层卷积神经网络
+net = slim.conv2d(inputs,16,[3,3],scope='conv1')
+Args:
+第1项为上一层输入数据
+第2项为该层卷积网络深度
+第3项为卷积核参数
+
+slim.arg_scope
+在该函数列表中的函数指定默认值

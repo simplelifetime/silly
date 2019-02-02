@@ -1,0 +1,1 @@
+channels，即通道数，in_channels为输入的图像通道数，out_channels为输出图像的通道数。一般卷积操作中filter和input的in_channels相同

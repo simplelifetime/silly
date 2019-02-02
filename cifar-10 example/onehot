@@ -1,0 +1,14 @@
+import tensorflow as tf
+import numpy as np
+a1=['a','b','c','d']
+a2=['e','f','g','h']
+a3=['i','j','k','l']
+a4=['m','n','o','p']
+b1=[1,2,3,4]
+b2=[5,6,7,8]
+b3=[9,10,11,12]
+b4=[13,14,15,16]
+a=np.concatenate((a1,a2,a3,a4),axis=0)
+b=np.concatenate((b1,b2,b3,b4),axis=0)
+print(a)
+print(b)

@@ -1,0 +1,31 @@
+1、tf.nn.dropout 通过dropout来放弃某些数据以达到防止过拟合的效果
+tf.nn.dropout(
+    x,
+    keep_prob,
+    noise_shape=None,
+    seed=None,
+    name=None
+)
+参数含义
+x：指输入，输入tensor
+keep_prob: float类型，每个元素被保留下来的概率，设置神经元被选中的概率,在初始化时keep_prob是一个占位符, keep_prob = tf.placeholder(tf.float32) 。tensorflow在run时设置keep_prob具体的值，例如keep_prob: 0.5
+noise_shape  : 一个1维的int32张量，代表了随机产生“保留/丢弃”标志的shape。
+seed : 整形变量，随机数种子。
+name：指定该操作的名字
+
+dropout必须设置概率keep_prob，并且keep_prob也是一个占位符，跟输入是一样的（设置为占位符的好处是只在训练时dropout，在测试时可以通过改变keep_prob的值使测试过程不会dropout）
+
+keep_prob = tf.placeholder(tf.float32)
+
+train的时候才是dropout起作用的时候，test的时候不应该让dropout起作用        
+
+正则化：
+L1正则化（绝对值项）：会使得参数变得更加稀疏（有更多参数变为0）
+L2正则化（平方项）：可导，易于优化，且不会使参数变得更稀疏(参数在足够小时已经不会影响到模型)
+tf.contrib.layers.l1_regularizer(lambda)(w) 返回一个函数，可以计算L1正则化项的值，w为正则化项，lambda为正则化项的系数
+tf.contrib.layers.l2_regularizer(lambda)(w) 返回一个函数，可以计算L2正则化项的值
+使用方法：
+tf.add_to_collection 在计算图中保存一组实体
+tf.add_to_collection('name',w)   第一个参数为集合名字，第二个参数为加入实体
+tf.get_collection：从一个结合中取出全部变量，返回一个列表
+tf.add_n() 实现对一个列表所有元素的相加

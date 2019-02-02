@@ -1,0 +1,135 @@
+import tensorflow as tf
+import numpy as np
+import cifar10,cifar10_input
+import time
+import matplotlib.pyplot as plt
+import numpy as np
+max_steps = 8000
+batch_size = 512    # 小批量数据大小
+fh1_nodes = 128     # 全连接隐藏层1节点数
+fh2_nodes = 64      # 隐藏层2
+display = 100
+data_dir = 'D:\python2\cifar-10\cifar-10-batches-py'    # 数据所在路径123456
+
+# 权重初始化+L2损失(正则)
+# l2正则是为了防止模型过拟合,将权重作为损失函数的一部分,减小权防止过拟合
+# stddev是标准差, w1 来控制l2正则的程度
+# tf.nn.l2_loss()计算权重损失,然后乘以系数w1
+# tf.add_to_collection()会创建一个集合(列表),存放每层权重的loss,最后在求和添加到损失函数中
+
+def l2_weight_init(shape, stddev, w1):
+    weight = tf.Variable(tf.truncated_normal(shape, stddev=stddev))
+    if w1 is not None:
+        weight_loss = tf.multiply(tf.nn.l2_loss(weight), w1, name='weight_loss')
+        tf.add_to_collection('losses', weight_loss)
+    return weight
+
+# 用于对卷积层权重初始化,卷积层没有使用l2正则
+def weight_init(shape, stddev):
+    weight = tf.Variable(tf.truncated_normal(shape, stddev=stddev))
+    return weight
+
+def biases_init(shape):
+    return tf.Variable(tf.random_normal(shape))
+
+def conv2d(image, weight):
+    return tf.nn.conv2d(image, weight, strides=[1,1,1,1],padding='SAME')
+
+def max_pool(tensor):
+    return tf.nn.max_pool(tensor, ksize=[1,3,3,1], strides=[1,2,2,1], padding='SAME')
+
+def LRnorm(tensor):
+    return tf.nn.lrn(tensor, 4, bias=1.0, alpha=0.001/9.0, beta = 0.75)
+
+# distorted_inputs函数生成训练数据,返回封装好的tensor对象
+# 在生成训练数据的同时,对训练数据进行了增强处理,对图像进行随机的反转,切割,亮度调整等等(增加噪声)
+# 增强处理,给每个图片增加了多个副本,可以提高数据的利用率,防止对某一图片的特征学习过拟合
+# 随机切割为24x24的大小
+
+train_images, train_labels = cifar10_input.distorted_inputs(batch_size= batch_size, data_dir= data_dir)
+
+
+# 测试数据是原图中间的24x24部分
+# cifar10_input.inputs()返回测试数据,测试数据的label值,不是one-hot的形式,是我一个一维
+test_images, test_labels = cifar10_input.inputs(batch_size= batch_size, data_dir= data_dir,eval_data= True)
+
+# 创建输入数据的占位节点
+images = tf.placeholder(tf.float32, [batch_size, 24, 24, 3])
+labels = tf.placeholder(tf.float32, [batch_size])
+
+# conv1 pool1 LRN1
+weight1 = weight_init([5, 5, 3, 32], 0.05)
+biases1 = biases_init([32])
+conv1 = tf.nn.relu(conv2d(images, weight1) + biases1) #shape:[batchsize,24,24,32]
+pool1 = max_pool(conv1)                               #shape:[batchsize,12,12,32]
+lrnorm1 = LRnorm(pool1)                               #shape:[batchsize,12,12,32]
+
+# conv2 LRN2 pool2
+weight2 = weight_init([5, 5, 32, 32], 0.05) 
+biases2 = biases_init([32])
+conv2 = tf.nn.relu((conv2d(lrnorm1, weight2) + biases2)) #shape:[batchsize,12,12,32]
+lrnorm2 = LRnorm(conv2)                                  #shape:[batchsize,12,12,32]
+pool2 = max_pool(lrnorm2)                                #shape:[batchsize,6,6,32]
+
+
+# flatten,池化后的特征转换为一维
+reshape = tf.reshape(pool2, [batch_size, -1])          # batchsize x 1152
+n_input = reshape.get_shape()[1].value
+
+# 全连接隐藏层1
+weight3 = l2_weight_init([n_input, fh1_nodes], 0.05, w1=0.001)
+biases3 = biases_init([fh1_nodes])
+fullc1 = tf.nn.relu(tf.matmul(reshape, weight3) + biases3)
+
+# 全连接隐藏层2
+weight4 = l2_weight_init([fh1_nodes, fh2_nodes], 0.05, w1=0.003)
+biases4 = biases_init([fh2_nodes])
+fullc2 = tf.nn.relu(tf.matmul(fullc1, weight4) + biases4)
+
+# output layer
+weight5 = weight_init([fh2_nodes, 10], 1/96.0)
+biases5 = biases_init([10])
+logits = tf.add(tf.matmul(fullc2, weight5) , biases5)    # 未激活输出
+y_out = tf.nn.softmax(logits)
+
+def loss(logits, labels):
+    labels = tf.cast(labels, tf.int64)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, 
+                                                                  labels = labels,
+                                                                  name ='cross_entropy_per_example')
+    # 交叉熵损失
+    cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
+    # 权重损失
+    tf.add_to_collection('losses', cross_entropy_mean)
+    return tf.add_n(tf.get_collection('losses'), name='total_loss')
+
+# 定义损失 = cross_entropy + l2_weight_loss
+loss = loss(logits, labels)
+# 优化Op
+train_op = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(loss)
+
+# Accuracy
+# tf.to_int64()
+# 测试数据没有进行one-hot编码
+def accuracy(test_labels, test_y_out):
+    test_labels = tf.to_int64(test_labels)
+    prediction_result = tf.equal(test_labels,tf.argmax(y_out,1))
+    accu = tf.reduce_mean(tf.cast(prediction_result, tf.float32))
+    return accu
+
+Cross_loss = []
+with tf.Session() as sess:
+    for i in range(max_steps):
+        start_time = time.time()
+        batch_images, batch_labels = sess.run([train_images, train_labels])
+        _, cross_entropy = sess.run([train_op, loss],feed_dict={images:batch_images, 
+                                                                labels:batch_labels})
+        Cross_loss.append(cross_entropy)
+        every_epoch_time = time.time() - start_time
+        if i % display == 0:
+            examples_per_sec = batch_size/ every_epoch_time
+            every_batch_time = float(every_epoch_time)
+            format_str = 'Epoch : %d, loss :%.5f, %d examples/sec, %.3f sec/batch'
+            print (format_str%(i+100,cross_entropy,examples_per_sec,every_batch_time))
+
+
