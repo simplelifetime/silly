@@ -1,0 +1,16 @@
+1、梯度下降方法
+    1）SGD，直接使用学习率乘以计算出来的梯度
+        缺点：在超平面上可能由于各个方面的梯度不同而振荡，最后的更新速度由某一个最小的梯度方向决定，导致整体达到最小值的速度减慢。
+    2）momentum:v=mu*v-learning_rate*dx   （mu为一个超参数，通常为0.5-0.99）
+                x+=v
+       momentum update可解释为动量更新，mu可以看作对更新的某种摩擦力而learning_rate*dx可看作对更新的动力 
+       （待补充）
+       nesterov momentum(待补充)
+    3）Adamgrad update:
+    cache+=dx**2
+    x+=-learning_rate*dx/(np.sqrt(cache)+1e-7)
+    优点：如果某个方向上梯度过大，对应的cache也会增加，学习率就会相对降低，减少振荡同时学习率会逐渐衰退，可以向最低点收敛
+    缺点：学习率到最后可能为0，而学习率为0时也许并不能达到全局的最优解
+    4）RMSprop
+    cache=decay_rate*cache+(1-decay_rate)*dx**2
+    x+=-learning_rate*dx/(np.sqrt(cache)+1e-7)
