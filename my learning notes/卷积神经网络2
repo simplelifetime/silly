@@ -1,0 +1,10 @@
+1、使用均值化（global avarage pool）代替全连接层以节省网络参数（googlenet） 
+    global average pooling将每一张特征图计算所有像素点的均值，输出一个数据值，每个特征图输出一个数据点，这样可以得到一个特征向量送入softmax
+分类器中进行计算
+    替换全连接层，大量减少参数，GAP层中没有参数
+
+2、resnet 残差网络（解决了网络深度不够的问题）
+    identity mapping 指自己本身的输出（x） residual mapping对应的函数处理后的输出f(x)
+    理论上，对于“随着网络加深，准确率下降”的问题，Resnet提供了两种选择方式，也就是identity mapping和residual mapping，如果网络已经到达最
+优，继续加深网络，residual mapping将被push为0，只剩下identity mapping，这样理论上网络一直处于最优状态了，网络的性能也就不会随着深度增加而降低了。
+    详细可见https://blog.csdn.net/lanran2/article/details/79057994
